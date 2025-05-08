@@ -15,10 +15,14 @@ const Header = ({ voteData }: HeaderProps) => {
     if (!voteData || !voteData.hasVotes) {
       return <span className="text-sm text-gray-500">Launch Date: No votes yet</span>;
     }
+    // Handle pluralization of "vote(s)"
+    const voteText = voteData.votes === 1 ? "vote" : "votes";
+
     if (voteData.dates.length === 1) {
-      return <span className="text-sm text-gray-700">Launch Date: {voteData.dates[0]} ({voteData.votes} votes)</span>;
+      return <span className="text-sm text-gray-700">Launch Date: {voteData.dates[0]} ({voteData.votes} {voteText})</span>;
     }
-    return <span className="text-sm text-gray-700">Launch Date: {voteData.dates.length} dates tied ({voteData.votes} votes)</span>;
+    // If tied, add "each" to the vote count
+    return <span className="text-sm text-gray-700">Launch Date: {voteData.dates.length} dates tied ({voteData.votes} {voteText} each)</span>;
   };
 
   return (
