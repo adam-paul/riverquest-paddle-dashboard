@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Participant {
   id: string;
@@ -12,30 +13,62 @@ interface Participant {
 }
 
 const Index = () => {
-  // Sort participants alphabetically by last name
-  const initialParticipants: Participant[] = [
-    { id: '1', name: 'Spencer Bialek', selectedDate: null, groceryList: [] },
-    { id: '2', name: 'Matt Bowley', selectedDate: null, groceryList: [] },
-    { id: '3', name: 'Katelyn Bunn', selectedDate: null, groceryList: [] },
-    { id: '4', name: 'Heather Earle', selectedDate: null, groceryList: [] },
-    { id: '5', name: 'Grayson Hicks', selectedDate: null, groceryList: [] },
-    { id: '6', name: 'Arella Kamp', selectedDate: null, groceryList: [] },
-    { id: '7', name: 'Cara Nikolai', selectedDate: null, groceryList: [] },
-    { id: '8', name: 'Adam Paul', selectedDate: null, groceryList: [] },
-    { id: '9', name: 'Babak Zargarian', selectedDate: null, groceryList: [] },
-  ].sort((a, b) => {
-    const lastNameA = a.name.split(' ').pop() || '';
-    const lastNameB = b.name.split(' ').pop() || '';
-    return lastNameA.localeCompare(lastNameB);
-  });
-
-  const [participants, setParticipants] = useState<Participant[]>(initialParticipants);
-  const [activeParticipantId, setActiveParticipantId] = useState<string>(participants[0].id);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [activeParticipantId, setActiveParticipantId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const isMobile = useIsMobile();
 
-  const activeParticipant = participants.find(p => p.id === activeParticipantId) || participants[0];
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, error: dbError } = await supabase
+          .from('participants')
+          .select('id, name, selected_date, grocery_list');
+
+        if (dbError) {
+          throw dbError;
+        }
+
+        if (data) {
+          const typedData = data.map(p => ({
+            ...p,
+            selectedDate: p.selected_date,
+            groceryList: p.grocery_list || []
+          })) as Participant[];
+
+          const sortedMappedData = [...typedData].sort((a_part, b_part) => {
+            const lastNameA = a_part.name.split(' ').pop() || '';
+            const lastNameB = b_part.name.split(' ').pop() || '';
+            return lastNameA.localeCompare(lastNameB);
+          });
+
+          setParticipants(sortedMappedData);
+          if (sortedMappedData.length > 0) {
+            setActiveParticipantId(sortedMappedData[0].id);
+          }
+        } else {
+          setParticipants([]);
+        }
+      } catch (err: any) {
+        console.error("Error fetching participants:", err);
+        setError(err.message || "Failed to fetch participants.");
+        setParticipants([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchParticipants();
+  }, []);
+
+  const activeParticipant = activeParticipantId 
+    ? participants.find(p => p.id === activeParticipantId) 
+    : participants.length > 0 ? participants[0] : null;
 
   const calculateVoteData = () => {
     if (!participants || participants.length === 0) {
@@ -71,54 +104,130 @@ const Index = () => {
 
   const voteData = calculateVoteData();
 
-  const handleDateSelect = (date: string) => {
+  const handleDateSelect = async (date: string) => {
+    if (!activeParticipant) return;
+
+    const oldSelectedDate = activeParticipant.selectedDate;
+    const newSelectedDate = oldSelectedDate === date ? null : date;
+
+    // Optimistic update of local state
     setParticipants(prevParticipants =>
-      prevParticipants.map(p => {
-        if (p.id === activeParticipantId) {
-          // If the clicked date is already selected, deselect it (set to null)
-          // Otherwise, select the new date
-          const newSelectedDate = p.selectedDate === date ? null : date;
-          return { ...p, selectedDate: newSelectedDate };
-        }
-        return p;
-      })
+      prevParticipants.map(p =>
+        p.id === activeParticipantId ? { ...p, selectedDate: newSelectedDate } : p
+      )
     );
+
+    try {
+      const { error: updateError } = await supabase
+        .from('participants')
+        .update({ selected_date: newSelectedDate }) // Use DB column name
+        .eq('id', activeParticipantId);
+
+      if (updateError) {
+        throw updateError;
+      }
+    } catch (err: any) {
+      console.error("Error updating selected date:", err);
+      // Revert optimistic update on error
+      setParticipants(prevParticipants =>
+        prevParticipants.map(p =>
+          p.id === activeParticipantId ? { ...p, selectedDate: oldSelectedDate } : p
+        )
+      );
+      // Optionally, notify the user about the error
+      alert(`Failed to update date: ${err.message}`);
+    }
   };
 
-  const handleAddGroceryItem = (item: string) => {
+  const handleAddGroceryItem = async (item: string) => {
+    if (!activeParticipant) return;
+
+    const newGroceryList = [...activeParticipant.groceryList, item];
+
+    // Optimistic update
     setParticipants(prevParticipants =>
       prevParticipants.map(p =>
         p.id === activeParticipantId 
-          ? { ...p, groceryList: [...p.groceryList, item] } 
+          ? { ...p, groceryList: newGroceryList } 
           : p
       )
     );
+
+    try {
+      const { error: updateError } = await supabase
+        .from('participants')
+        .update({ grocery_list: newGroceryList }) // Use DB column name
+        .eq('id', activeParticipantId);
+
+      if (updateError) {
+        throw updateError;
+      }
+    } catch (err: any) {
+      console.error("Error adding grocery item:", err);
+      // Revert optimistic update
+      setParticipants(prevParticipants =>
+        prevParticipants.map(p =>
+          p.id === activeParticipantId 
+            ? { ...p, groceryList: activeParticipant.groceryList } // Revert to original list
+            : p
+        )
+      );
+      alert(`Failed to add grocery item: ${err.message}`);
+    }
   };
 
-  const handleRemoveGroceryItem = (index: number) => {
+  const handleRemoveGroceryItem = async (indexToRemove: number) => {
+    if (!activeParticipant) return;
+
+    const originalGroceryList = [...activeParticipant.groceryList];
+    const newGroceryList = activeParticipant.groceryList.filter((_, i) => i !== indexToRemove);
+
+    // Optimistic update
     setParticipants(prevParticipants =>
       prevParticipants.map(p =>
         p.id === activeParticipantId 
-          ? { 
-              ...p, 
-              groceryList: p.groceryList.filter((_, i) => i !== index) 
-            } 
+          ? { ...p, groceryList: newGroceryList }
           : p
       )
     );
+
+    try {
+      const { error: updateError } = await supabase
+        .from('participants')
+        .update({ grocery_list: newGroceryList }) // Use DB column name
+        .eq('id', activeParticipantId);
+
+      if (updateError) {
+        throw updateError;
+      }
+    } catch (err: any) {
+      console.error("Error removing grocery item:", err);
+      // Revert optimistic update
+      setParticipants(prevParticipants =>
+        prevParticipants.map(p =>
+          p.id === activeParticipantId 
+            ? { ...p, groceryList: originalGroceryList } // Revert to original list
+            : p
+        )
+      );
+      alert(`Failed to remove grocery item: ${err.message}`);
+    }
   };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // When a participant is selected on mobile, close the sidebar
   const handleParticipantSelect = (id: string) => {
     setActiveParticipantId(id);
     if (isMobile) {
       setIsSidebarOpen(false);
     }
   };
+
+  if (loading) return <p>Loading participants...</p>;
+  if (error) return <p>Error: {error}</p>;
+  if (!activeParticipant) return <p>No participants found or selected.</p>;
 
   return (
     <div className="min-h-screen flex flex-col bg-eggshell">
