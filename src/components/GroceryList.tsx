@@ -1,4 +1,3 @@
-
 import React, { useState, KeyboardEvent } from 'react';
 
 interface GroceryListProps {
@@ -26,7 +25,7 @@ const GroceryList = ({
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-steelblue-dark">Grocery List</h3>
       <p className="text-sm text-muted-foreground">
-        What groceries would you like to bring for the trip?
+        SAY WHAT TO BUY
       </p>
       
       <div className="mt-3">
@@ -50,7 +49,7 @@ const GroceryList = ({
                 key={index} 
                 className="flex items-center gap-2 py-2 px-3 bg-accent/50 rounded-md group"
               >
-                <span className="inline-block w-4 h-4 rounded-full bg-steelblue flex-shrink-0"></span>
+                <span className="inline-block w-2 h-2 rounded-full bg-steelblue flex-shrink-0"></span>
                 <span className="flex-1">{item}</span>
                 <button
                   onClick={() => onRemoveItem(index)}

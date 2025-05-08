@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  base: '/riverquest-paddle-dashboard/',
   plugins: [
     react(),
     mode === 'development' &&

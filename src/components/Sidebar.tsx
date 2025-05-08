@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +7,7 @@ interface SidebarProps {
   setActiveParticipant: (id: string) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+  isMobile: boolean;
 }
 
 const Sidebar = ({ 
@@ -15,7 +15,8 @@ const Sidebar = ({
   activeParticipant, 
   setActiveParticipant,
   isSidebarOpen,
-  toggleSidebar
+  toggleSidebar,
+  isMobile
 }: SidebarProps) => {
   return (
     <div className="relative">
@@ -30,9 +31,10 @@ const Sidebar = ({
       
       <aside 
         className={cn(
-          "fixed left-0 top-[60px] bottom-0 z-30 w-64 border-r border-steelblue/20 bg-white transition-all duration-300 ease-in-out",
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full",
-          "md:translate-x-0"
+          "w-64 border-r border-steelblue/20 bg-white transition-all duration-300 ease-in-out",
+          isMobile ? 
+            `fixed left-0 top-[60px] bottom-0 z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}` :
+            "h-full md:translate-x-0" // For desktop: in-flow, full height, ensure visible
         )}
       >
         <div className="p-4 border-b border-steelblue/20">

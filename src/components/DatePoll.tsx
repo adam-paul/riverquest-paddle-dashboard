@@ -17,7 +17,7 @@ const DatePoll = ({ selectedDate, onDateSelect }: DatePollProps) => {
     <div className="space-y-4">
       <h3 className="text-lg font-medium text-steelblue-dark">Launch Date Preference</h3>
       <p className="text-sm text-muted-foreground">
-        When would you prefer to begin our paddle trip?
+        PICK A LAUNCH DATE
       </p>
       
       <div className="flex flex-col sm:flex-row gap-3 mt-4">

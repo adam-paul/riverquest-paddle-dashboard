@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DatePoll from './DatePoll';
 import GroceryList from './GroceryList';
@@ -28,11 +27,11 @@ const Dashboard = ({
           {participant.name}'s Dashboard
         </h2>
         <p className="text-muted-foreground">
-          Please complete your trip preferences below.
+          PICK A LAUNCH DATE AND SAY WHAT TO BUY
         </p>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-steelblue/10">
           <DatePoll 
             selectedDate={participant.selectedDate} 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -38,11 +37,51 @@ const Index = () => {
 
   const activeParticipant = participants.find(p => p.id === activeParticipantId) || participants[0];
 
+  const calculateVoteData = () => {
+    if (!participants || participants.length === 0) {
+      return { dates: [], votes: 0, hasVotes: false };
+    }
+
+    const dateVotes: Record<string, number> = {};
+    let hasAnyActualVotes = false;
+    participants.forEach(p => {
+      if (p.selectedDate) {
+        dateVotes[p.selectedDate] = (dateVotes[p.selectedDate] || 0) + 1;
+        hasAnyActualVotes = true;
+      }
+    });
+
+    if (!hasAnyActualVotes) {
+      return { dates: [], votes: 0, hasVotes: false };
+    }
+
+    let maxVotes = 0;
+    for (const date in dateVotes) {
+      if (dateVotes[date] > maxVotes) {
+        maxVotes = dateVotes[date];
+      }
+    }
+
+    const leadingDates = Object.keys(dateVotes).filter(
+      date => dateVotes[date] === maxVotes
+    );
+
+    return { dates: leadingDates, votes: maxVotes, hasVotes: true };
+  };
+
+  const voteData = calculateVoteData();
+
   const handleDateSelect = (date: string) => {
     setParticipants(prevParticipants =>
-      prevParticipants.map(p =>
-        p.id === activeParticipantId ? { ...p, selectedDate: date } : p
-      )
+      prevParticipants.map(p => {
+        if (p.id === activeParticipantId) {
+          // If the clicked date is already selected, deselect it (set to null)
+          // Otherwise, select the new date
+          const newSelectedDate = p.selectedDate === date ? null : date;
+          return { ...p, selectedDate: newSelectedDate };
+        }
+        return p;
+      })
     );
   };
 
@@ -83,7 +122,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-eggshell">
-      <Header />
+      <Header voteData={voteData} />
       <div className="flex flex-1">
         <Sidebar 
           participants={participants} 
@@ -91,9 +130,10 @@ const Index = () => {
           setActiveParticipant={handleParticipantSelect}
           isSidebarOpen={isSidebarOpen}
           toggleSidebar={toggleSidebar}
+          isMobile={isMobile}
         />
         
-        <main className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0' : 'md:ml-64'}`}>
+        <main className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0' : ''}`}>
           <Dashboard 
             participant={activeParticipant}
             onDateSelect={handleDateSelect}
