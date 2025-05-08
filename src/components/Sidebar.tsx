@@ -22,7 +22,10 @@ const Sidebar = ({
     <div className="relative">
       {/* Toggle button for mobile */}
       <button 
-        className="md:hidden fixed top-16 left-0 z-40 p-2 bg-steelblue text-white rounded-r-md"
+        className={cn(
+          "md:hidden fixed top-16 z-40 p-2 bg-steelblue text-white transition-all duration-300 ease-in-out",
+          isSidebarOpen ? "left-64 -translate-x-full rounded-l-md" : "left-0 rounded-r-md"
+        )}
         onClick={toggleSidebar}
         aria-label="Toggle sidebar"
       >
@@ -33,7 +36,7 @@ const Sidebar = ({
         className={cn(
           "w-64 border-r border-steelblue/20 bg-white transition-all duration-300 ease-in-out",
           isMobile ? 
-            `fixed left-0 top-[60px] bottom-0 z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}` :
+            `fixed left-0 top-16 bottom-0 z-30 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}` :
             "h-full md:translate-x-0" // For desktop: in-flow, full height, ensure visible
         )}
       >

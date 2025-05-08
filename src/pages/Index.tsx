@@ -133,7 +133,7 @@ const Index = () => {
           isMobile={isMobile}
         />
         
-        <main className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0' : ''}`}>
+        <main className={`flex-1 transition-all duration-300 ${isMobile ? 'ml-0 pt-10' : ''}`}>
           <Dashboard 
             participant={activeParticipant}
             onDateSelect={handleDateSelect}
