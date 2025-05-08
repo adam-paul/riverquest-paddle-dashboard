@@ -1,4 +1,5 @@
 import React, { useState, KeyboardEvent } from 'react';
+import { Plus } from 'lucide-react';
 
 interface GroceryListProps {
   groceryItems: string[];
@@ -13,12 +14,23 @@ const GroceryList = ({
 }: GroceryListProps) => {
   const [newItem, setNewItem] = useState('');
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newItem.trim()) {
-      onAddItem(newItem.trim());
+  const attemptAddItem = () => {
+    const trimmedItem = newItem.trim();
+    if (trimmedItem) {
+      onAddItem(trimmedItem);
       setNewItem('');
-      e.preventDefault();
     }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      attemptAddItem();
+      e.preventDefault(); // Prevent potential form submission if wrapped in a form
+    }
+  };
+
+  const handleAddButtonClick = () => {
+    attemptAddItem();
   };
 
   return (
@@ -29,15 +41,23 @@ const GroceryList = ({
       </p>
       
       <div className="mt-3">
-        <div className="flex items-center border border-steelblue/20 rounded-md focus-within:ring-1 focus-within:ring-steelblue focus-within:border-steelblue overflow-hidden">
+        <div className="flex items-center border border-steelblue/20 rounded-md focus-within:ring-1 focus-within:ring-steelblue focus-within:border-steelblue overflow-hidden pr-2">
           <input
             type="text"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add grocery item (press Enter to add)"
-            className="flex-1 py-2 px-3 outline-none bg-transparent text-foreground"
+            placeholder="Add grocery item"
+            className="flex-1 py-2 px-3 outline-none bg-transparent text-foreground placeholder-muted-foreground/70"
           />
+          <button
+            onClick={handleAddButtonClick}
+            disabled={!newItem.trim()}
+            className="px-3 py-2 bg-steelblue text-white hover:bg-steelblue-dark focus:outline-none focus:ring-1 focus:ring-steelblue disabled:opacity-60 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center"
+            aria-label="Add grocery item"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
         </div>
         
         <ul className="mt-4 space-y-2 max-h-[300px] overflow-y-auto">
